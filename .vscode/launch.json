@@ -1,0 +1,17 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "travel_agent",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "flask",
+      "env": {
+        "FLASK_APP": "app.py",      // 指定 Flask 主文件
+        "FLASK_ENV": "development"   // 开发模式（自动重载）
+      },
+      "args": ["run", "--debug"],   // 启用调试模式
+      "jinja": true                 // 支持 Jinja2 模板调试
+    }
+  ]
+}
