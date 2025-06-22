@@ -1,17 +1,44 @@
 {
   "version": "0.2.0",
   "configurations": [
+    // 调试 Flask 后端
     {
-      "name": "travel_agent",
-      "type": "debugpy",
+      "name": "Python: Flask Backend",
+      "type": "python",
       "request": "launch",
       "module": "flask",
       "env": {
-        "FLASK_APP": "app.py",      // 指定 Flask 主文件
-        "FLASK_ENV": "development"   // 开发模式（自动重载）
+        "FLASK_APP": "server.py",
+        "FLASK_ENV": "development"
       },
-      "args": ["run", "--debug"],   // 启用调试模式
-      "jinja": true                 // 支持 Jinja2 模板调试
+      "args": [
+        "run",
+        "--no-debugger",
+        "--no-reload",
+        "--port=5000"
+      ],
+      "jinja": true
+    },
+    // 调试 Streamlit 前端
+    {
+      "name": "Python: Streamlit Frontend",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/app.py",
+      "args": [
+        "--server.port=8501",
+        "--server.headless=true"
+      ],
+      "env": {
+        "DIFY_API_URL": "http://localhost:5000/ask"
+      }
+    }
+  ],
+  // 同时启动前后端（需安装 Compound Runner 扩展）
+  "compounds": [
+    {
+      "name": "Full Stack Debug",
+      "configurations": ["Python: Flask Backend", "Python: Streamlit Frontend"]
     }
   ]
 }
