@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 import json
-import html  # 用于转义特殊字符（防止HTML注入）
+import html2text
 
 # 页面标题
 st.title("🤖 Your Travel Agent")
@@ -15,6 +15,10 @@ with st.form("dify_form"):
 def stream_response(response):
     buffer = ""
     should_output = False  # 标记是否开始输出
+    converter = html2text.HTML2Text()
+    converter.body_width = 0
+    converter.single_line_break = True
+    converter.wrap_links = False
     
     for chunk in response.iter_content(chunk_size=None):
         buffer += chunk.decode('utf-8')
@@ -43,10 +47,16 @@ def stream_response(response):
                                 should_output = True
                                 # 只输出</details>之后的内容
                                 text = text.split("</details>")[-1].strip()
+                                if text:  # 确保分割后不是空字符串
+                                    cleaned_text = converter.handle(text)
+                                    cleaned_text = ''.join(cleaned_text.split())
+                                    yield cleaned_text
+                            continue
                         
                         # 如果已经检测到</details>，正常输出
-                        text=text.replace('~',r'\~')  # 转义波浪线
-                        yield text
+                        cleaned_text = converter.handle(text)
+                        cleaned_text = ''.join(cleaned_text.split())
+                        yield cleaned_text
                         
                     elif event_data.get("event") == "workflow_finished":
                         return
