@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 import json
+import html  # 用于转义特殊字符（防止HTML注入）
 
 # 页面标题
 st.title("🤖 Your Travel Agent")
@@ -13,6 +14,8 @@ with st.form("dify_form"):
 # 处理流式输出
 def stream_response(response):
     buffer = ""
+    should_output = False  # 标记是否开始输出
+    
     for chunk in response.iter_content(chunk_size=None):
         buffer += chunk.decode('utf-8')
         
@@ -32,9 +35,22 @@ def stream_response(response):
                 try:
                     event_data = json.loads(json_str)
                     if event_data.get("event") == "text_chunk":
-                        yield event_data["data"]["text"]
+                        text = event_data["data"]["text"]
+                        
+                        # 检查是否包含</details>标签
+                        if not should_output:
+                            if "</details>" in text:
+                                should_output = True
+                                # 只输出</details>之后的内容
+                                text = text.split("</details>")[-1].strip()
+                        
+                        # 如果已经检测到</details>，正常输出
+                        text=text.replace('~',r'\~')  # 转义波浪线
+                        yield text
+                        
                     elif event_data.get("event") == "workflow_finished":
-                        return  # 使用 return 而不是 break 来结束生成器
+                        return
+                        
                 except json.JSONDecodeError as e:
                     st.warning(f"解析 JSON 失败: {e}\n原始数据: {json_str}")
                     continue
@@ -54,13 +70,11 @@ if submit_button and user_input:
             response.raise_for_status()
             
             # 显示结果
-            result = response.json()
             st.success("Your Travel Agent 回答：")
-            #st.write(result["data"]["outputs"]["message"])
             st.write_stream(stream_response(response))
         
         except Exception as e:
-            st.error(f"请求失败: {str(e)}")
+            st.error(f"详细错误: {type(e)} - {str(e)}")
 
 
             

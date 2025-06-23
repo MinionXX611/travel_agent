@@ -28,9 +28,10 @@ def ask_dify():
             DIFY_API_URL,
             headers=headers,
             json=payload,
-            stream=True  # 关键：保持流式连接
+            stream=True  
         )
         dify_response.raise_for_status()
+        #("Raw Response:", dify_response.text)
 
         # 将Dify的流式响应原样转发给客户端
         return Response(
