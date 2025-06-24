@@ -12,6 +12,9 @@ st.set_page_config(
 # 初始化会话状态
 if "messages" not in st.session_state:
     st.session_state.messages = []
+    
+if "conversation_id" not in st.session_state:
+    st.session_state.conversation_id = ''
 
 # 侧边栏设置
 with st.sidebar:
@@ -23,6 +26,7 @@ with st.sidebar:
 # 清空对话历史
 if clear_button:
     st.session_state.messages = []
+    st.session_state.conversation_id = '' 
     st.rerun()
 
 # 页面标题
@@ -34,8 +38,9 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 
 def display_stream_response(response):
-    """显示后端返回的已处理流式响应，并返回完整回复内容"""
+    """显示后端返回的已处理流式响应，并返回完整回复内容和conversation_id"""
     full_response = ""
+    conversation_id = ''
     
     for line in response.iter_lines():
         if line:
@@ -44,16 +49,18 @@ def display_stream_response(response):
                     data = json.loads(line[5:])
                     if 'text' in data:
                         full_response += data['text']
-                        message_placeholder.markdown(full_response + "▌")  # 添加光标效果
+                        message_placeholder.markdown(full_response + "▌")
+                    elif 'conversation_id' in data:  # 提取conversation_id
+                        conversation_id = data['conversation_id']
                     elif 'event' in data and data['event'] == 'end':
                         message_placeholder.markdown(full_response)
-                        return full_response
+                        return full_response, conversation_id
                     elif 'error' in data:
                         st.error(f"错误: {data['error']}")
-                        return None
+                        return None, None
                 except json.JSONDecodeError:
                     continue
-    return full_response
+    return full_response, conversation_id
 
 # 用户输入
 if prompt := st.chat_input("输入消息..."):
@@ -72,13 +79,19 @@ if prompt := st.chat_input("输入消息..."):
         try:
             response = requests.post(
                 "http://localhost:5000/ask",
-                json={"text": prompt},
+                json={
+                    "text": prompt,
+                    "conversation_id": st.session_state.conversation_id  # 传递当前会话ID
+                },
                 stream=True
             )
             response.raise_for_status()
             
-            # 处理流式响应并获取完整回复
-            full_response = display_stream_response(response)
+            # 处理流式响应并获取完整回复和conversation_id
+            full_response, new_conversation_id = display_stream_response(response)
+            
+            if new_conversation_id:
+                st.session_state.conversation_id = new_conversation_id
             
             if full_response:
                 # 只有成功获取完整回复后才添加到历史记录

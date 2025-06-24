@@ -2,13 +2,8 @@ from flask import Flask, request, Response, stream_with_context, jsonify
 import requests
 import json
 import html2text
-from tinydb import TinyDB, Query  # 新增导入
 
 app = Flask(__name__)
-
-# 初始化 TinyDB
-db = TinyDB('conversations.json')
-conversations_table = db.table('conversations')
 
 DIFY_API_URL = "https://api.dify.ai/v1/chat-messages"
 DIFY_API_KEY = "app-RkuXkUDc9Fxsh4L9nF9Fu1qz"
@@ -40,17 +35,12 @@ def process_dify_stream(response):
                 try:
                     event_data = json.loads(json_str)
                     if event_data.get("event") == "message":
-                        text = event_data.get("answer")
+                        text = event_data["answer"]
                         conversation_id = event_data.get("conversation_id")
                         
-                        # 存储conversation_id到TinyDB
+                        # 返回conversation_id给前端
                         if conversation_id:
-                            Conversation = Query()
-                            if not conversations_table.search(Conversation.conversation_id == conversation_id):
-                                conversations_table.insert({
-                                    'conversation_id': conversation_id,
-                                    'last_used': event_data.get("created_at", "")
-                                })
+                            yield f"data: {json.dumps({'conversation_id': conversation_id})}\n\n"
                         
                         # 处理</details>标签
                         if not should_output and "</details>" in text:
@@ -72,11 +62,7 @@ def process_dify_stream(response):
 def ask_dify():
     data = request.json
     user_input = data.get("text", "")
-    
-    # 从tinydb获取最新的conversation_id
-    Conversation = Query()
-    last_conversation = conversations_table.search(Conversation.conversation_id.exists())
-    conversation_id = last_conversation[-1]['conversation_id'] if last_conversation else None
+    conversation_id = data.get("conversation_id")  # 从前端获取当前会话ID
     
     headers = {
         "Authorization": f"Bearer {DIFY_API_KEY}",
@@ -86,7 +72,7 @@ def ask_dify():
         "inputs": {},
         "query": user_input,
         "response_mode": "streaming",
-        "conversation_id": conversation_id,
+        "conversation_id": conversation_id,  # 传递给Dify API
         "user": "travel_user"
     }
 
@@ -106,13 +92,6 @@ def ask_dify():
     
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-@app.route("/get_history/<conversation_id>", methods=["GET"])
-def get_history(conversation_id):
-    """获取历史对话"""
-    Conversation = Query()
-    result = conversations_table.search(Conversation.conversation_id == conversation_id)
-    return jsonify(result[0] if result else {})
 
 if __name__ == "__main__":
     app.run(port=5000, debug=True)
