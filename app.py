@@ -1,6 +1,9 @@
 import streamlit as st
 import requests
 import json
+from schemas.chat import ASK_REQUEST_SCHEMA
+from jsonschema import validate, ValidationError
+from utils.security import filter_util
 
 # 设置页面配置
 st.set_page_config(
@@ -37,6 +40,17 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
+def validate_input(text):
+    """验证用户输入"""
+    try:
+        validate(instance=text, schema=ASK_REQUEST_SCHEMA["properties"]["text"])
+        has_sensitive, _ = filter_util.filter(text)
+        if has_sensitive:
+            return False, "输入包含不允许的内容"
+        return True, None
+    except ValidationError as e:
+        return False, f"输入无效: {e.message}"
+
 def display_stream_response(response):
     """显示后端返回的已处理流式响应，并返回完整回复内容和conversation_id"""
     full_response = ""
@@ -64,6 +78,11 @@ def display_stream_response(response):
 
 # 用户输入
 if prompt := st.chat_input("输入消息..."):
+    is_valid, error_msg = validate_input(prompt)
+    if not is_valid:
+        st.error(error_msg)
+        st.stop()  # 停止执行当前运行
+    
     # 添加用户消息到历史
     st.session_state.messages.append({"role": "user", "content": prompt})
     

@@ -2,11 +2,23 @@ from flask import Flask, request, Response, stream_with_context, jsonify
 import requests
 import json
 import html2text
+from jsonschema import ValidationError
+from schemas.chat import ask_request_validator, dify_response_validator
+from utils.security import filter_util
 
 app = Flask(__name__)
 
 DIFY_API_URL = "https://api.dify.ai/v1/chat-messages"
 DIFY_API_KEY = "app-RkuXkUDc9Fxsh4L9nF9Fu1qz"
+
+def validate_response(data):
+    """验证Dify API返回的数据"""
+    try:
+        dify_response_validator.validate(data)
+        return True
+    except ValidationError:
+        return False
+
 
 def process_dify_stream(response):
     """处理Dify的流式响应并返回清洗后的文本"""
@@ -34,6 +46,10 @@ def process_dify_stream(response):
                     
                 try:
                     event_data = json.loads(json_str)
+                    if not validate_response(event_data):
+                        yield f"data: {json.dumps({'error': 'Invalid response format'})}\n\n"
+                        continue
+                    
                     if event_data.get("event") == "message":
                         text = event_data["answer"]
                         conversation_id = event_data.get("conversation_id")
@@ -60,8 +76,26 @@ def process_dify_stream(response):
 
 @app.route("/ask", methods=["POST"])
 def ask_dify():
+    if not request.is_json:
+        return jsonify({"error": "Request must be JSON"}), 400
+    try:
+        ask_request_validator.validate(request.json)
+    except ValidationError as e:
+        return jsonify({
+            "error": "Invalid request",
+            "message": str(e)
+        }), 400
+    
     data = request.json
     user_input = data.get("text", "")
+    # 敏感词检测
+    has_sensitive, cleaned_input = filter_util.filter(user_input)
+    if has_sensitive:
+        return jsonify({
+            "error": "输入包含敏感内容",
+            "code": 4001
+        }), 400
+    
     conversation_id = data.get("conversation_id")  # 从前端获取当前会话ID
     
     headers = {
