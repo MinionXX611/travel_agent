@@ -3,3 +3,4 @@ streamlit>=1.0.0
 requests>=2.26.0
 flask-cors>=3.0.10
 html2text
+tinydb
