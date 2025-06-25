@@ -55,6 +55,8 @@ def display_stream_response(response):
     """显示后端返回的已处理流式响应，并返回完整回复内容和conversation_id"""
     full_response = ""
     conversation_id = ''
+    #debug
+    st.text("debuging...")
     
     for line in response.iter_lines():
         if line:

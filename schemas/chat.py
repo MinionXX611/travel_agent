@@ -45,7 +45,9 @@ DIFY_RESPONSE_SCHEMA = {
         "node_finished",
         "workflow_finished",
         "error",
-        "ping"
+        "ping",
+        "parallel_branch_started",
+        "parallel_branch_finished"
       ]
     },
     "task_id": {
@@ -141,6 +143,30 @@ DIFY_RESPONSE_SCHEMA = {
             "total_steps": { "type": ["string","integer"] },
             "created_at": { "type": "integer" },
             "finished_at": { "type": "integer" }
+          }
+        },
+        {
+          "properties": {
+            "parallel_id": { "type": "string", "format": "uuid" },
+            "parallel_branch_id": { "type": "string" },
+            "parent_parallel_id": { "type": ["string", "null"] },
+            "parent_parallel_start_node_id": { "type": ["string", "null"] },
+            "iteration_id": { "type": ["string", "null"] },
+            "loop_id": { "type": ["string", "null"] },
+            "created_at": { "type": "integer" }
+          }
+        },
+        {
+          "properties": {
+            "parallel_id": { "type": "string", "format": "uuid" },
+            "parallel_branch_id": { "type": "string" },
+            "parent_parallel_id": { "type": ["string", "null"] },
+            "parent_parallel_start_node_id": { "type": ["string", "null"] },
+            "iteration_id": { "type": ["string", "null"] },
+            "loop_id": { "type": ["string", "null"] },
+            "status": { "enum": ["running", "succeeded", "failed", "stopped"] },
+            "error": { "type": ["string", "null"] },
+            "created_at": { "type": "integer" }
           }
         }
       ]
@@ -307,6 +333,28 @@ DIFY_RESPONSE_SCHEMA = {
     {
       "properties": {
         "event": { "const": "ping" }
+      }
+    },
+    {
+      "properties": {
+        "event": { "const": "parallel_branch_started" },
+        "task_id": { "type": "string", "format": "uuid" },
+        "message_id": { "type": "string", "format": "uuid" },
+        "conversation_id": { "type": "string", "format": "uuid" },
+        "created_at": { "type": "integer" },
+        "workflow_run_id": { "type": "string" },
+        "data": { "$ref": "#/properties/data/anyOf/4" }
+      }
+    },
+    {
+      "properties": {
+        "event": { "const": "parallel_branch_finished" },
+        "task_id": { "type": "string", "format": "uuid" },
+        "message_id": { "type": "string", "format": "uuid" },
+        "conversation_id": { "type": "string", "format": "uuid" },
+        "created_at": { "type": "integer" },
+        "workflow_run_id": { "type": "string" },
+        "data": { "$ref": "#/properties/data/anyOf/5" }
       }
     }
   ]
