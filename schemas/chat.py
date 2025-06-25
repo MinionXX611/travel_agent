@@ -47,7 +47,8 @@ DIFY_RESPONSE_SCHEMA = {
         "error",
         "ping",
         "parallel_branch_started",
-        "parallel_branch_finished"
+        "parallel_branch_finished",
+        "node_retry"
       ]
     },
     "task_id": {
@@ -168,6 +169,53 @@ DIFY_RESPONSE_SCHEMA = {
             "error": { "type": ["string", "null"] },
             "created_at": { "type": "integer" }
           }
+        },
+        {
+          "properties": {
+            "id": { "type": "string", "format": "uuid" },
+            "node_id": { "type": "string" },
+            "node_type": { "type": "string" },
+            "title": { "type": "string" },
+            "index": { "type": "integer" },
+            "predecessor_node_id": { "type": ["string", "null"] },
+            "inputs": { "type": ["object", "null"] },
+            "process_data": { "type": ["object", "null"] },
+            "outputs": {
+              "type": "object",
+              "properties": {
+                "status_code": { "type": "integer" },
+                "body": { "type": "string" },
+                "headers": { "type": "object" },
+                "files": { "type": "array" }
+              },
+              "required": ["status_code", "body", "headers", "files"]
+            },
+            "status": { "const": "retry" },
+            "error": { "type": ["string", "null"] },
+            "elapsed_time": { "type": "number" },
+            "execution_metadata": {
+              "type": "object",
+              "properties": {
+                "iteration_id": { "type": ["string", "null"] },
+                "parallel_mode_run_id": { "type": ["string", "null"] },
+                "loop_id": { "type": ["string", "null"] }
+              }
+            },
+            "created_at": { "type": "integer" },
+            "finished_at": { "type": "integer" },
+            "files": { "type": "array" },
+            "parallel_id": { "type": "string", "format": "uuid" },
+            "parallel_start_node_id": { "type": "string" },
+            "parent_parallel_id": { "type": ["string", "null"] },
+            "parent_parallel_start_node_id": { "type": ["string", "null"] },
+            "iteration_id": { "type": ["string", "null"] },
+            "loop_id": { "type": ["string", "null"] },
+            "retry_index": { "type": "integer", "minimum": 0 }
+          },
+          "required": [
+            "id", "node_id", "node_type", "status", "error", 
+            "elapsed_time", "created_at", "finished_at", "retry_index"
+          ]
         }
       ]
     },
@@ -356,6 +404,21 @@ DIFY_RESPONSE_SCHEMA = {
         "workflow_run_id": { "type": "string" },
         "data": { "$ref": "#/properties/data/anyOf/5" }
       }
+    },
+    {
+      "properties": {
+        "event": { "const": "node_retry" },
+        "task_id": { "type": "string", "format": "uuid" },
+        "message_id": { "type": "string", "format": "uuid" },
+        "conversation_id": { "type": "string", "format": "uuid" },
+        "created_at": { "type": "integer" },
+        "workflow_run_id": { "type": "string", "format": "uuid" },
+        "data": { "$ref": "#/properties/data/anyOf/6" } 
+      },
+      "required": [
+        "task_id", "message_id", "conversation_id", 
+        "created_at", "workflow_run_id", "data"
+      ]
     }
   ]
 }

@@ -4,6 +4,7 @@ import json
 from schemas.chat import ASK_REQUEST_SCHEMA
 from jsonschema import validate, ValidationError
 from utils.security import filter_util
+import time
 
 # 设置页面配置
 st.set_page_config(
@@ -15,6 +16,11 @@ st.set_page_config(
 # 初始化会话状态
 if "messages" not in st.session_state:
     st.session_state.messages = []
+    # 添加初始欢迎消息
+    st.session_state.messages.append({
+        "role": "assistant",
+        "content": "你好，我是你的专属旅行规划师，请告诉我您的旅行时间、人数、出发地、旅行地、预算、旅行偏好，我将为您生成详细的旅行计划"
+    })
     
 if "conversation_id" not in st.session_state:
     st.session_state.conversation_id = ''
@@ -55,8 +61,10 @@ def display_stream_response(response):
     """显示后端返回的已处理流式响应，并返回完整回复内容和conversation_id"""
     full_response = ""
     conversation_id = ''
-    #debug
-    st.text("debuging...")
+    buffer = ""
+    last_update_time = 0
+    update_interval = 0.1  # 更新间隔(秒)
+    current_time = time.time()
     
     for line in response.iter_lines():
         if line:
@@ -64,18 +72,32 @@ def display_stream_response(response):
                 try:
                     data = json.loads(line[5:])
                     if 'text' in data:
+                        buffer += data['text']
                         full_response += data['text']
-                        message_placeholder.markdown(full_response + "▌")
-                    elif 'conversation_id' in data:  # 提取conversation_id
+                        
+                        # 控制更新频率，避免过于频繁的DOM操作
+                        current_time = time.time()
+                        if current_time - last_update_time > update_interval or len(buffer) > 50:
+                            message_placeholder.markdown(full_response + "▌")
+                            buffer = ""
+                            last_update_time = current_time
+                            
+                    elif 'conversation_id' in data:
                         conversation_id = data['conversation_id']
                     elif 'event' in data and data['event'] == 'end':
+                        # 确保最终显示完整内容
                         message_placeholder.markdown(full_response)
                         return full_response, conversation_id
                     elif 'error' in data:
                         st.error(f"错误: {data['error']}")
                         return None, None
-                except json.JSONDecodeError:
+                except json.JSONDecodeError as e:
+                    st.warning(f"数据解析异常: {str(e)}")
                     continue
+    
+    # 最终确保显示完整内容
+    if full_response:
+        message_placeholder.markdown(full_response)
     return full_response, conversation_id
 
 # 用户输入

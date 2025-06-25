@@ -1,7 +1,6 @@
 from flask import Flask, request, Response, stream_with_context, jsonify
 import requests
 import json
-import html2text
 from jsonschema import ValidationError
 from schemas.chat import ask_request_validator, dify_response_validator
 from utils.security import filter_util
@@ -24,11 +23,6 @@ def validate_response(data):
 def process_dify_stream(response):
     """处理Dify的流式响应并返回清洗后的文本"""
     buffer = ""
-    #should_output = False
-    #converter = html2text.HTML2Text()
-    #converter.body_width = 0
-    #converter.single_line_break = True
-    #converter.wrap_links = False
     
     for chunk in response.iter_content(chunk_size=None):
         buffer += chunk.decode('utf-8')
@@ -47,6 +41,7 @@ def process_dify_stream(response):
                     
                 try:
                     event_data = json.loads(json_str)
+                    
                     if not validate_response(event_data):
                         yield f"data: {json.dumps({'error': 'Invalid response format'})}\n\n"
                         continue
@@ -58,11 +53,6 @@ def process_dify_stream(response):
                         # 返回conversation_id给前端
                         if conversation_id:
                             yield f"data: {json.dumps({'conversation_id': conversation_id})}\n\n"
-                        
-                        # 处理</details>标签
-                        '''if not should_output and "</details>" in text:
-                            should_output = True
-                            text = text.split("</details>")[-1].strip()'''
                         
                         if text:
                             yield f"data: {json.dumps({'text': text})}\n\n"
