@@ -83,8 +83,7 @@
 pip3 install -r requirements.txt
 
 # 配置环境变量
-echo "API_KEY=your_api_key_here" > .env
-echo "API_URL=https://api.example.com" >> .env
+echo "DIFY_API_KEY = "app-ANs22fGiGQdRi101fBwOl6Fb"" >> .env
 
 # 在一个终端运行
 python server.py
@@ -92,6 +91,9 @@ python server.py
 # 在另一个终端运行
 streamlit run app.py
 ```
+## 📌 输出/使用样例
+📥 (./examples/输出样例.pdf)
+
 ---
 
 > 注意：使用时请遵守相关服务条款。
