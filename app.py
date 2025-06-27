@@ -35,7 +35,12 @@ with st.sidebar:
 # 清空对话历史
 if clear_button:
     st.session_state.messages = []
-    st.session_state.conversation_id = '' 
+    st.session_state.conversation_id = ''
+    # 添加初始欢迎消息
+    st.session_state.messages.append({
+        "role": "assistant",
+        "content": "你好，我是你的专属旅行规划师，请告诉我您的旅行时间、人数、出发地、旅行地、预算、旅行偏好，我将为您生成详细的旅行计划"
+    }) 
     st.rerun()
 
 # 页面标题
