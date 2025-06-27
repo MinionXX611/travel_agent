@@ -4,26 +4,12 @@ import json
 from jsonschema import ValidationError
 from schemas.chat import ask_request_validator, dify_response_validator
 from utils.security import filter_util
-import os
-from dotenv import load_dotenv
-from functools import lru_cache
-
-
-# 加载环境变量
-load_dotenv()
-
-# 缓存环境变量读取（避免重复IO）
-@lru_cache(maxsize=1)
-def get_api_config():
-    return os.getenv("DIFY_API_KEY")
-
 
 app = Flask(__name__)
 
 DIFY_API_URL = "https://api.dify.ai/v1/chat-messages"
-DIFY_API_KEY = get_api_config()
-if not DIFY_API_KEY:
-    raise ValueError("Dify API key is not set in environment variables.")
+#DIFY_API_KEY = "app-RkuXkUDc9Fxsh4L9nF9Fu1qz" #test
+DIFY_API_KEY = "app-ANs22fGiGQdRi101fBwOl6Fb"
 
 def validate_response(data):
     """验证Dify API返回的数据"""
