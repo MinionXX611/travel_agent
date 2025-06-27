@@ -92,7 +92,7 @@ python server.py
 streamlit run app.py
 ```
 ## 📌 输出/使用样例
-📥 (./examples/输出样例.pdf)
+📥 [输出样例](./examples/输出样例.pdf)
 
 ---
 
