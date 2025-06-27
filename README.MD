@@ -64,7 +64,7 @@
 5. **配置环境变量**:
    - 在项目根目录的`.env`文件填入我们的API密钥
      ```
-     DIFY_API_KEY = "app-ANs22fGiGQdRi101fBwOl6Fb"
+     DIFY_API_KEY = "your_api_key"
      ```
 
 6. **启动后端服务** (在新终端中):
@@ -83,7 +83,7 @@
 pip3 install -r requirements.txt
 
 # 配置环境变量
-echo "DIFY_API_KEY = "app-ANs22fGiGQdRi101fBwOl6Fb"" >> .env
+echo "DIFY_API_KEY = "your_api_key"" >> .env
 
 # 在一个终端运行
 python server.py
